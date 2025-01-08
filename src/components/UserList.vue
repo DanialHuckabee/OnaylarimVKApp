@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { ChevronRightIcon } from '@heroicons/vue/20/solid'
+
 import { useRouter } from 'vue-router'
 import PageLayout from './PageLayout.vue'
 import OrganizationCompareModal from './OrganizationCompareModal.vue'
@@ -78,7 +78,8 @@ const groupedUsers = computed(() => {
   
   props.users.forEach(userPair => {
     const orgId = userPair.sourceUser.organizationId
-    const orgName = userPair.sourceUser.organizationDisplayName || userPair.targetUser.organizationDisplayName || 'No Organization Name. Source Org Id: ' + userPair.sourceUser.organizationId + ' Target Org Id: ' + userPair.targetUser.organizationId
+    let  orgName = userPair.sourceUser.organizationDisplayName  || userPair.targetUser.organizationDisplayName || 'No Organization Name'
+    orgName +=  " || Source Org Id: " + userPair.sourceUser.organizationId + " - Target Org Id: " + userPair.targetUser.organizationId
     
     if (!groups.has(orgId)) {
       groups.set(orgId, { name: orgName, users: [] })
@@ -103,8 +104,8 @@ const groupedUsers = computed(() => {
             <DisclosureButton class="w-full">
               <div class="grid grid-cols-7 gap-4 px-6 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer">
                 <div class="flex items-center col-span-7">
-                  <ChevronRightIcon 
-                    class="w-5 h-5 mr-2 transform transition-transform duration-200"
+                  <div 
+                    class="w-5 h-5 mr-2 transform transition-transform duration-200 bg-gray-300"
                     :class="{ 'rotate-90': open }"
                     aria-hidden="true"
                   />
