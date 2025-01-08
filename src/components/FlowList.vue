@@ -22,21 +22,7 @@ interface Flow {
   departmentId: number | null
 }
 
-interface OrganizationUsersCompareDto {
-  sourceUser: {
-    id: number
-    displayName: string
-    organizationId: number
-    organizationDisplayName: string
-  }
-  targetUser: {
-    id: number
-    displayName: string
-    organizationId: number
-    organizationDisplayName: string
-  }
-  isOrganizationDifferent: boolean
-}
+
 
 const route = useRoute()
 const router = useRouter()

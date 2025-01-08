@@ -1,26 +1,7 @@
 <script setup lang="ts">
 import { Dialog, DialogPanel } from '@headlessui/vue'
 import { computed } from 'vue'
-
-interface OrganizationDto {
-  id: number
-  displayName: string
-  legalName: string
-}
-
-interface UserMatchDto {
-  id: number
-  displayName: string
-  email: string
-}
-
-interface OrganizationUsersCompareDto {
-  sourceOrganization: OrganizationDto
-  targetOrganization: OrganizationDto
-  matchedUsers: UserMatchDto[]
-  unmatchedSourceUsers: UserMatchDto[]
-  unmatchedTargetUsers: UserMatchDto[]
-}
+import { type OrganizationUsersCompareDto } from '../types/OrganizationUsersCompareDto'
 
 const props = defineProps<{
   isOpen: boolean

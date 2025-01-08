@@ -1,19 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { getApiUrl } from './utils/api'
+import { type UserPair } from './types/OrganizationUsersCompareDto'
+import { type OrganizationUsersCompareDto } from './types/OrganizationUsersCompareDto'
 
-interface User {
-  email: string
-  displayName: string | null
-  id: number
-  organizationId: number
-  organizationDisplayName: string
-}
-
-interface UserPair {
-  sourceUser: User
-  targetUser: User
-}
 
 const users = ref<UserPair[]>([])
 

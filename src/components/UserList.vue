@@ -6,35 +6,9 @@ import { useRouter } from 'vue-router'
 import PageLayout from './PageLayout.vue'
 import OrganizationCompareModal from './OrganizationCompareModal.vue'
 import { getApiUrl } from '../utils/api'
+import { type OrganizationUsersCompareDto, type UserPair } from '../types/OrganizationUsersCompareDto'
 
-interface User {
-  email: string
-  displayName: string | null
-  id: number
-  organizationId: number
-  organizationDisplayName: string
-}
 
-interface UserPair {
-  sourceUser: User
-  targetUser: User
-}
-
-interface OrganizationUsersCompareDto {
-  sourceUser: {
-    id: number
-    displayName: string
-    organizationId: number
-    organizationDisplayName: string
-  }
-  targetUser: {
-    id: number
-    displayName: string
-    organizationId: number
-    organizationDisplayName: string
-  }
-  isOrganizationDifferent: boolean
-}
 
 const props = defineProps<{
   users: UserPair[]
