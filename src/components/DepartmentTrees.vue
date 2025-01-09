@@ -47,7 +47,9 @@ watchEffect(async () => {
 
   try {
     const response = await fetch(getApiUrl(`/organization/${props.flowId}`))
+    
     trees.value = await response.json()
+    console.log(trees.value)
   } catch (err) {
     error.value = 'Failed to load department trees'
     console.error('Error fetching department trees:', err)
@@ -114,7 +116,7 @@ const handleTargetDepartmentSelect = (departmentId: number) => {
                     class="text-sm font-medium"
                     :class="{ 'text-blue-600': isSourceDepartment(department), 'text-gray-900': !isSourceDepartment(department) }"
                   >
-                    {{ department.displayName }}
+                  {{ department.id }}  {{ department.displayName }}
                   </span>
                 </div>
                 <div v-if="department.childDepartments.length > 0" class="pl-4 border-l border-gray-200">
@@ -124,7 +126,7 @@ const handleTargetDepartmentSelect = (departmentId: number) => {
                         class="text-sm"
                         :class="{ 'text-blue-600': isSourceDepartment(child), 'text-gray-900': !isSourceDepartment(child) }"
                       >
-                        {{ child.displayName }}
+                      {{ child.id }}   {{ child.displayName }}
                       </span>
                     </div>
                     <div v-if="child.childDepartments.length > 0" class="pl-4 border-l border-gray-200">
@@ -159,7 +161,7 @@ const handleTargetDepartmentSelect = (departmentId: number) => {
                     :class="{ 'bg-blue-50 text-blue-600': selectedTargetDepartmentId === department.id }"
                     @click="handleTargetDepartmentSelect(department.id)"
                   >
-                    {{ department.displayName }}
+                 {{ department.id }} {{ department.displayName }}
                   </button>
                 </div>
                 <div v-if="department.childDepartments.length > 0" class="pl-4 border-l border-gray-200">
@@ -170,7 +172,7 @@ const handleTargetDepartmentSelect = (departmentId: number) => {
                         :class="{ 'bg-blue-50 text-blue-600': selectedTargetDepartmentId === child.id }"
                         @click="handleTargetDepartmentSelect(child.id)"
                       >
-                        {{ child.displayName }}
+                       {{ child.id }} {{ child.displayName }}
                       </button>
                     </div>
                     <div v-if="child.childDepartments.length > 0" class="pl-4 border-l border-gray-200">

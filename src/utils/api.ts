@@ -1,3 +1,17 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7242'
+import { ref } from 'vue'
 
-export const getApiUrl = (path: string) => `${API_BASE_URL}${path}` 
+const selectedEnvironment = ref<'bulutova' | 'comnet'>('bulutova')
+
+export const setEnvironment = (env: 'bulutova' | 'comnet') => {
+  selectedEnvironment.value = env
+}
+
+export const getApiUrl = (path: string) => {
+  const baseUrl = selectedEnvironment.value === 'bulutova' 
+    ? import.meta.env.VITE_API_BASE_URL 
+    : import.meta.env.VITE_API_BASE_URL2
+
+  return `${baseUrl}${path}`
+}
+
+export const getCurrentEnvironment = () => selectedEnvironment.value 

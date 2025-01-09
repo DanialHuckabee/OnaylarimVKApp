@@ -22,12 +22,21 @@ interface Flow {
   departmentId: number | null
 }
 
+interface TargetFlow {
+  uniqueId: string
+  targetId: number
+  subject: string
+}
 
+interface GetUserFlowsDto {
+  flows: Flow[]
+  targetFlowDtos: TargetFlow[]
+}
 
 const route = useRoute()
 const router = useRouter()
 const userId = computed(() => Number(route.params.userId))
-const flows = ref<Flow[]>([])
+const flowsData = ref<GetUserFlowsDto | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -70,7 +79,7 @@ const handleSelectFlow = (flow: Flow) => {
 // Update watchEffect to use API utility
 watchEffect(async () => {
   if (!userId.value) {
-    flows.value = []
+    flowsData.value = null
     return
   }
 
@@ -79,7 +88,7 @@ watchEffect(async () => {
 
   try {
     const response = await fetch(getApiUrl(`/flow/${userId.value}`))
-    flows.value = await response.json()
+    flowsData.value = await response.json()
   } catch (err) {
     error.value = 'Failed to load flows'
     console.error('Error fetching flows:', err)
@@ -87,6 +96,18 @@ watchEffect(async () => {
     loading.value = false
   }
 })
+
+// Check if flow has been migrated
+const isFlowMigrated = (uniqueId: string) => {
+  if (!flowsData.value?.targetFlowDtos) return false
+  return flowsData.value.targetFlowDtos.some(target => target.uniqueId === uniqueId)
+}
+
+// Get migrated flow info
+const getMigratedFlowInfo = (uniqueId: string) => {
+  if (!flowsData.value?.targetFlowDtos) return null
+  return flowsData.value.targetFlowDtos.find(target => target.uniqueId === uniqueId)
+}
 </script>
 
 <template>
@@ -107,54 +128,107 @@ watchEffect(async () => {
           {{ error }}
         </div>
 
-        <!-- Flows Table -->
-        <div v-else class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 table-fixed">
-            <thead class="bg-gray-50">
-              <tr>
-                <th scope="col" class="w-14 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th scope="col" class="w-20 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unique ID</th>
-                <th scope="col" class="w-40 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                <th scope="col" class="w-24 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" class="w-20 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Docs</th>
-                <th scope="col" class="w-16 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pages</th>
-                <th scope="col" class="w-20 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                <th scope="col" class="w-32 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                <th scope="col" class="w-32 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                <th scope="col" class="w-20 px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-if="flows.length === 0">
-                <td colspan="10" class="px-2 py-4 text-center text-sm text-gray-500">
-                  No flows found for this user
-                </td>
-              </tr>
-              <tr v-for="flow in flows" :key="flow.id" class="hover:bg-gray-50">
-                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.id }}</td>
-                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.uniqueId }}</td>
-                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 truncate">{{ flow.subject || '-' }}</td>
-                <td class="px-2 py-4 whitespace-nowrap">
-                  <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getStatusInfo(flow.status).color]">
-                    {{ getStatusInfo(flow.status).text }}
-                  </span>
-                </td>
-                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.documentCount }}</td>
-                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.pageCount }}</td>
-                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.flowItemCount }}</td>
-                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatDate(flow.flowStartDate) }}</td>
-                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 truncate">{{ flow.departmentName || '-' }}</td>
-                <td class="px-2 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    @click="handleSelectFlow(flow)"
-                    class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md"
-                  >
-                    Seç
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Data State -->
+        <div v-else-if="flowsData" class="space-y-6">
+          <!-- Source Flows -->
+          <div>
+            <h3 class="text-lg font-medium text-gray-900 px-6 pt-6">Kaynak Flow'lar</h3>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unique ID</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doc Count</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Page Count</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flow Start Date</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Migration Status</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr v-if="flowsData.flows.length === 0">
+                    <td colspan="10" class="px-2 py-4 text-center text-sm text-gray-500">
+                      No flows found for this user
+                    </td>
+                  </tr>
+                  <tr v-for="flow in flowsData.flows" :key="flow.id" class="hover:bg-gray-50">
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.id }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.uniqueId }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.subject || '-' }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap">
+                      <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', getStatusInfo(flow.status).color]">
+                        {{ getStatusInfo(flow.status).text }}
+                      </span>
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.documentCount }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.pageCount }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatDate(flow.flowStartDate) }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.departmentName || '-' }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap">
+                      <div v-if="isFlowMigrated(flow.uniqueId)" class="text-sm">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Aktarıldı
+                        </span>
+                        <span class="text-xs text-gray-500 mt-1 block">
+                          ID: {{ getMigratedFlowInfo(flow.uniqueId)?.targetId }}
+                        </span>
+                        <span class="text-xs text-gray-500 mt-1 block">
+                          ID: {{ getMigratedFlowInfo(flow.uniqueId)?.uniqueId }}
+                        </span>
+                        <span class="text-xs text-gray-500 mt-1 block">
+                          ID: {{ getMigratedFlowInfo(flow.uniqueId)?.subject }}
+                        </span>
+                      </div>
+                      <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Aktarılmadı
+                      </span>
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm">
+                      <button 
+                        @click="handleSelectFlow(flow)"
+                        :disabled="isFlowMigrated(flow.uniqueId)"
+                        class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Seç
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Target Flows -->
+          <div v-if="flowsData.targetFlowDtos.length > 0" class="border-t pt-6">
+            <h3 class="text-lg font-medium text-gray-900 px-6">Hedef Flow'lar</h3>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unique ID</th>
+                    <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr v-for="flow in flowsData.targetFlowDtos" :key="flow.targetId" class="hover:bg-gray-50">
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.targetId }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.uniqueId }}</td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">{{ flow.subject || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Data State -->
+        <div v-else class="p-6 text-center text-gray-500">
+          No flow data available
         </div>
       </div>
     </div>
