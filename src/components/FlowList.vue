@@ -69,7 +69,7 @@ const getStatusInfo = (status: number) => {
 const handleSelectFlow = (flow: Flow) => {
   router.push({ 
     name: 'departments', 
-    params: { flowId: flow.id.toString() },
+    params: { flowIds: flow.id.toString() },
     query: { 
       departmentId: flow.departmentId?.toString() || '',
       departmentName: flow.departmentName || ''
