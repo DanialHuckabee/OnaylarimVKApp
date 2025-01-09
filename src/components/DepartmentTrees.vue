@@ -16,7 +16,7 @@ interface DepartmentTrees {
 }
 
 const props = defineProps<{
-  flowId: number
+  flowIds: string[]
 }>()
 
 const route = useRoute()
@@ -37,7 +37,7 @@ const sourceDepartmentName = computed(() => {
 
 // Fetch department trees when flowId changes
 watchEffect(async () => {
-  if (!props.flowId) {
+  if (!props.flowIds || props.flowIds.length === 0) {
     trees.value = null
     return
   }
@@ -46,7 +46,8 @@ watchEffect(async () => {
   error.value = null
 
   try {
-    const response = await fetch(getApiUrl(`/organization/${props.flowId}`))
+    // Use the first flow ID for fetching the organization structure
+    const response = await fetch(getApiUrl(`/organization/${props.flowIds[0]}`))
     
     trees.value = await response.json()
     console.log(trees.value)
@@ -62,7 +63,7 @@ const handleNext = () => {
   router.push({ 
     name: 'migrate', 
     params: { 
-      flowId: props.flowId.toString()
+      flowIds: props.flowIds.join(',')
     },
     query: {
       sourceDepartmentId: sourceDepartmentId.value?.toString() || '',
@@ -102,6 +103,12 @@ const handleTargetDepartmentSelect = (departmentId: number) => {
 
       <!-- Trees Display -->
       <div v-else-if="trees" class="space-y-6 p-6">
+        <div v-if="flowIds.length > 1" class="mb-4 bg-blue-50 border border-blue-200 rounded-md p-4">
+          <p class="text-sm text-blue-700">
+            Not: Birden fazla flow seçildi. Departman yapısı ilk flow (ID: {{ flowIds[0] }}) baz alınarak gösterilmektedir.
+          </p>
+        </div>
+
         <div class="grid grid-cols-2 gap-6">
           <!-- Source Departments -->
           <div>

@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import UserList from '../components/UserList.vue'
 import FlowList from '../components/FlowList.vue'
 import DepartmentTrees from '../components/DepartmentTrees.vue'
-import Migrate from '../components/Migrate.vue'
+import MigrateTabs from '../components/MigrateTabs.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -20,16 +20,24 @@ const router = createRouter({
       props: true
     },
     {
-      path: '/departments/:flowId',
+      path: '/departments/:flowIds',
       name: 'departments',
       component: DepartmentTrees,
-      props: true
+      props: route => ({ 
+        flowIds: Array.isArray(route.params.flowIds) 
+          ? route.params.flowIds[0].split(',') 
+          : route.params.flowIds.split(',')
+      })
     },
     {
-      path: '/migrate/:flowId',
+      path: '/migrate/:flowIds',
       name: 'migrate',
-      component: Migrate,
-      props: true
+      component: MigrateTabs,
+      props: route => ({ 
+        flowIds: Array.isArray(route.params.flowIds) 
+          ? route.params.flowIds[0].split(',') 
+          : route.params.flowIds.split(',')
+      })
     }
   ]
 })
